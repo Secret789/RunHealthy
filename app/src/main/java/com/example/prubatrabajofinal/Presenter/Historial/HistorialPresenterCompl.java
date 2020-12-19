@@ -10,6 +10,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.prubatrabajofinal.Model.Historial.TrayectoriaModel;
+import com.example.prubatrabajofinal.Model.Historial.UbicacionModel;
 import com.example.prubatrabajofinal.View.Historial.IHistorialView;
 import com.example.prubatrabajofinal.View.Usuario.IUsuarioView;
 
@@ -19,12 +20,15 @@ import org.json.JSONObject;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class HistorialPresenterCompl implements IHistorialPresenter{
     IHistorialView iHistorialView;
     View v;
     TrayectoriaModel trayectoriaModel;
+    ArrayList<UbicacionModel> lista;
     public HistorialPresenterCompl(IHistorialView iHistorialView, View v){
         this.iHistorialView=iHistorialView;
         this.v=v;
@@ -91,5 +95,51 @@ public class HistorialPresenterCompl implements IHistorialPresenter{
         RequestQueue requestQueue = Volley.newRequestQueue(v.getContext());
         requestQueue.add(jasonArrayRequest);
         return trayectoriaModel;
+    }
+    public List<UbicacionModel> ObtenerUbicaciones(int id, String URL){
+        final ProgressDialog progressBar = new ProgressDialog(v.getContext());
+        progressBar.setMessage("Cargando...");
+        progressBar.show();
+
+        lista =new ArrayList<>();
+        JsonArrayRequest jasonArrayRequest =new JsonArrayRequest(URL+"?UbiTraId="+Integer.toString(id), new Response.Listener<JSONArray>() {
+            @Override
+            public void onResponse(JSONArray response) {
+                JSONObject jsonObject = null;
+                for (int i = 0; i < response.length(); i++) {
+                    try {
+                        jsonObject = response.getJSONObject(i);
+
+                        lista.add(new UbicacionModel(
+                                jsonObject.getInt("UbiId"),
+                                jsonObject.getString("UbiFec"),
+                                jsonObject.getString("UbiLat"),
+                                jsonObject.getString("UbiLon"),
+                                jsonObject.getString("UbiVel"))
+                        );
+
+                    } catch (JSONException e) {
+                        //Log.e("myTag", e.getMessage());
+                        progressBar.dismiss();
+                        Toast.makeText(v.getContext(),e.getMessage(),Toast.LENGTH_SHORT).show();
+                    }
+                }
+                iHistorialView.updateMapa(lista);
+                progressBar.dismiss();
+
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                //Log.e("myTag","Error de conexion");
+                progressBar.dismiss();
+                Toast.makeText(v.getContext(),"Error de conexion",Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        RequestQueue requestQueue = Volley.newRequestQueue(v.getContext());
+        requestQueue.add(jasonArrayRequest);
+        return lista;
     }
 }

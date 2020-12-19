@@ -23,6 +23,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.prubatrabajofinal.Model.Historial.TrayectoriaModel;
+import com.example.prubatrabajofinal.Model.Historial.UbicacionModel;
 import com.example.prubatrabajofinal.Model.Reproductor.MusicaModel;
 import com.example.prubatrabajofinal.Presenter.Usuario.IUsuarioPresenter;
 import com.example.prubatrabajofinal.Presenter.Usuario.UsuarioPresenterCompl;
@@ -75,10 +76,23 @@ public class Usuario extends Fragment implements IUsuarioView{
         graficaResumen.initArray(weekStats,week);
 
         button1=(Button)v.findViewById(R.id.button6);
+
+
+
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                InsertTrayectoria(getString(R.string.cloud_data)+"insertar_trayectoria.php");
+                TrayectoriaModel tm =new TrayectoriaModel(-1,"2020/12/18 11:57:30","2020/12/16 11:57:30","2020/12/16 13:57:33","10");
+                ArrayList<UbicacionModel> um=new ArrayList<>();
+                um.add(new UbicacionModel(-1,"2020/12/18 11:57:30","-16.39849864929515","-71.53625747659349","-1"));
+                um.add(new UbicacionModel(-1,"2020/12/18 11:57:31","-16.398406766708614","-71.53618825040174","-1"));
+                um.add(new UbicacionModel(-1,"2020/12/18 11:57:32","-16.398260300314767","-71.53612850724063","-1"));
+                um.add(new UbicacionModel(-1,"2020/12/18 11:57:33","-16.398061979184206","-71.53604505648514","-1"));
+                um.add(new UbicacionModel(-1,"2020/12/18 11:57:34","-16.398026499693593","-71.53603841835839","-1"));
+                um.add(new UbicacionModel(-1,"2020/12/18 11:57:35","-16.39797100612085","-71.53620531986176","-1"));
+                um.add(new UbicacionModel(-1,"2020/12/18 11:57:36","-16.397910963876793","-71.53637506627713","-1"));
+                InsertTrayectoria(getString(R.string.cloud_data)+"insertar_trayectoria2.php",tm,um);
+
             }
         });
 
@@ -170,7 +184,39 @@ public class Usuario extends Fragment implements IUsuarioView{
     }
 
 
-    public void InsertTrayectoria(String URL){
+    public void InsertTrayectoria(String URL, final TrayectoriaModel tm, final ArrayList<UbicacionModel> ubi){
+
+        StringRequest stringRequest =new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Toast.makeText(getContext(), "OPERACION EXITOSA"+response, Toast.LENGTH_SHORT).show();
+                for(int i =0;i<ubi.size();i++){
+                    InsertUbicacion(getText(R.string.cloud_data)+"insertar_ubicacion.php",response,ubi.get(i));
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(getContext(), error.toString(), Toast.LENGTH_SHORT).show();
+            }
+        }){
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String,String> parametros =new HashMap<String, String>();
+                SimpleDateFormat formatOri = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                Date now=new Date();
+                parametros.put("fecha",tm.traFec);
+                parametros.put("horaini",tm.traIni);
+                parametros.put("horafin",tm.traFin);
+                parametros.put("usuario","11");
+                return parametros;
+            }
+        };
+        RequestQueue requestQueue = Volley.newRequestQueue(this.getContext());
+        requestQueue.add(stringRequest);
+
+    }
+    public void InsertUbicacion(String URL, final String idTra, final UbicacionModel ubi){
         StringRequest stringRequest =new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
@@ -187,15 +233,16 @@ public class Usuario extends Fragment implements IUsuarioView{
                 Map<String,String> parametros =new HashMap<String, String>();
                 SimpleDateFormat formatOri = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                 Date now=new Date();
-                parametros.put("fecha",formatOri.format(now));
-                parametros.put("horaini",formatOri.format(now));
-                parametros.put("horafin",formatOri.format(now));
-                parametros.put("usuario","11");
+                parametros.put("fecha",ubi.ubiFec);
+                parametros.put("lat",ubi.ubiLat);
+                parametros.put("lon",ubi.ubiLon);
+                parametros.put("vel",ubi.UbiVel);
+                parametros.put("traid",idTra);
+                parametros.put("usuid","11");
                 return parametros;
             }
         };
         RequestQueue requestQueue = Volley.newRequestQueue(this.getContext());
         requestQueue.add(stringRequest);
-
     }
 }
